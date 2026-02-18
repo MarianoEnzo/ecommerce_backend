@@ -21,3 +21,71 @@ model User {
   role      Role     @default(CUSTOMER)
   updatedAt DateTime @updatedAt
 }
+
+model Product {
+  id          Int    @id @default(autoincrement())
+  name        String
+  slug        String @unique
+  description String
+  price       Float
+
+  isActive Boolean @default(true)
+
+  category Category
+  gender   Gender
+
+  variants ProductVariant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductVariant {
+  id Int @id @default(autoincrement())
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  size     Size
+  stock    Int
+  colorId  Int
+  color    Color   @relation(fields: [colorId], references: [id])
+  imageUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, size, colorId])
+}
+
+model Color {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  hexCode   String
+  createdAt DateTime @default(now())
+
+  variants ProductVariant[]
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNISEX
+}
+
+enum Category {
+  TSHIRT
+  SWEATSHIRT
+  JACKET
+  PANTS
+  SHOES
+}
+
+enum Size {
+  XS
+  S
+  M
+  L
+  XL
+  XXL
+}
