@@ -1,5 +1,6 @@
-import { IsOptional, IsEnum } from 'class-validator';
-import { Category, Gender } from '@prisma/client';
+import { IsOptional, IsEnum, IsInt, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import { Category, Gender, Size } from '@prisma/client';
 
 export class FilterProductsDto {
   @IsOptional()
@@ -12,4 +13,20 @@ export class FilterProductsDto {
 
   @IsOptional()
   color?: string;
+
+  @IsOptional()
+  @IsEnum(Size)
+  size?: Size;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number = 10;
 }
