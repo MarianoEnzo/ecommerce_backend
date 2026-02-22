@@ -47,4 +47,8 @@ export class FilterProductDto {
   @Type(() => Number)
   @IsInt()
   colorId: number;
+
+  sort?: string;
+
+  order?: 'asc' | 'desc';
 }

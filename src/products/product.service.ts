@@ -4,19 +4,14 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product';
 import { FilterProductDto } from './dto/filter-product.dto';
 import slugify from 'slugify';
+import { generateUniqueSlug } from 'src/common/helpers/slug.helper';
 
 @Injectable()
 export class ProductService {
   constructor(private prisma: PrismaService) {}
 
-  // ===============================
-  // CREATE PRODUCT
-  // ===============================
   async create(dto: CreateProductDto) {
-    const slug = slugify(dto.name, {
-      lower: true,
-      strict: true,
-    });
+    const slug = await generateUniqueSlug(this.prisma, 'product', dto.name);
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
@@ -44,10 +39,7 @@ export class ProductService {
     });
   }
 
-  // ===============================
-  // FIND ALL WITH FILTER + PAGINATION
-  // ===============================
-  async findAll(filters: FilterProductDto) {
+  async findAll(filters: FilterProductDto = {} as FilterProductDto) {
     const {
       page = 1,
       limit = 10,
@@ -62,6 +54,8 @@ export class ProductService {
     const where: any = {
       isActive: true,
     };
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 50);
 
     if (category) where.category = category;
     if (gender) where.gender = gender;
@@ -84,8 +78,8 @@ export class ProductService {
     const [products, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
         where,
-        skip: (page - 1) * limit,
-        take: limit,
+        skip: (safePage - 1) * safeLimit,
+        take: safeLimit,
         include: {
           variants: {
             include: {
@@ -104,26 +98,18 @@ export class ProductService {
       data: products,
       meta: {
         total,
-        page,
-        lastPage: Math.ceil(total / limit),
+        page: safePage,
+        lastPage: Math.ceil(total / safeLimit),
       },
     };
   }
 
-  // ===============================
-  // FIND ONE
-  // ===============================
   async findOne(id: number) {
-    const product = await this.prisma.product.findFirst({
-      where: {
-        id,
-        isActive: true,
-      },
+    const product = await this.prisma.product.findUnique({
+      where: { id },
       include: {
         variants: {
-          include: {
-            color: true,
-          },
+          include: { color: true },
         },
       },
     });
@@ -135,35 +121,34 @@ export class ProductService {
     return product;
   }
 
-  // ===============================
-  // UPDATE PRODUCT
-  // ===============================
   async update(id: number, dto: UpdateProductDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+
+    let slug = existing.slug;
+
+    // Si el nombre cambia, regeneramos slug
+    if (dto.name && dto.name !== existing.name) {
+      slug = await generateUniqueSlug(this.prisma, 'product', dto.name);
+    }
 
     return this.prisma.product.update({
       where: { id },
       data: {
-        name: dto.name,
-        description: dto.description,
-        price: dto.price,
-        category: dto.category,
-        gender: dto.gender,
-        isActive: dto.isActive,
+        name: dto.name ?? existing.name,
+        slug,
+        description: dto.description ?? existing.description,
+        price: dto.price ?? existing.price,
+        category: dto.category ?? existing.category,
+        gender: dto.gender ?? existing.gender,
+        isActive: dto.isActive ?? existing.isActive,
       },
       include: {
         variants: {
-          include: {
-            color: true,
-          },
+          include: { color: true },
         },
       },
     });
   }
-
-  // ===============================
-  // SOFT DELETE
-  // ===============================
   async remove(id: number) {
     await this.findOne(id);
 
@@ -171,29 +156,45 @@ export class ProductService {
       where: { id },
       data: {
         isActive: false,
+        deletedAt: new Date(),
       },
     });
   }
 
   async findOneBySlug(slug: string) {
-  const product = await this.prisma.product.findFirst({
-    where: {
-      slug,
-      isActive: true,
-    },
-    include: {
-      variants: {
-        include: {
-          color: true,
+    const product = await this.prisma.product.findUnique({
+      where: { slug },
+      include: {
+        variants: {
+          include: { color: true },
         },
       },
-    },
-  });
+    });
 
-  if (!product) {
-    throw new NotFoundException('Product not found');
+    if (!product || !product.isActive) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return product;
   }
 
-  return product;
-}
+  async findOnePublic(id: number) {
+    const product = await this.prisma.product.findFirst({
+      where: {
+        id,
+        isActive: true,
+      },
+      include: {
+        variants: {
+          include: { color: true },
+        },
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return product;
+  }
 }

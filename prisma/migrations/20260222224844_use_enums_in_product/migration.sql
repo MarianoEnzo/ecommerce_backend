@@ -16,15 +16,19 @@ CREATE TABLE `Product` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `slug` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NOT NULL,
-    `price` DOUBLE NOT NULL,
-    `isActive` BOOLEAN NOT NULL DEFAULT true,
+    `description` VARCHAR(191) NULL,
+    `price` DECIMAL(10, 2) NOT NULL,
     `category` ENUM('TSHIRT', 'SWEATSHIRT', 'JACKET', 'PANTS', 'SHOES') NOT NULL,
     `gender` ENUM('MALE', 'FEMALE', 'UNISEX') NOT NULL,
+    `isActive` BOOLEAN NOT NULL DEFAULT true,
+    `deletedAt` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Product_slug_key`(`slug`),
+    INDEX `Product_price_idx`(`price`),
+    INDEX `Product_createdAt_idx`(`createdAt`),
+    INDEX `Product_isActive_idx`(`isActive`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

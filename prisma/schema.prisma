@@ -23,21 +23,25 @@ model User {
 }
 
 model Product {
-  id          Int    @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
-  slug        String @unique
-  description String
-  price       Float
+  slug        String   @unique
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  category    Category
+  gender      Gender
 
-  isActive Boolean @default(true)
-
-  category Category
-  gender   Gender
-
-  variants ProductVariant[]
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  variants ProductVariant[]
+
+  @@index([price])
+  @@index([createdAt])
+  @@index([isActive])
 }
 
 model ProductVariant {
@@ -67,13 +71,13 @@ model Color {
   variants ProductVariant[]
 }
 
- enum Gender {
+enum Gender {
   MALE
   FEMALE
   UNISEX
 }
 
- enum Category {
+enum Category {
   TSHIRT
   SWEATSHIRT
   JACKET
@@ -81,7 +85,7 @@ model Color {
   SHOES
 }
 
- enum Size {
+enum Size {
   XS
   S
   M
