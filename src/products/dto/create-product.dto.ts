@@ -1,27 +1,26 @@
 import {
   IsString,
-  IsNotEmpty,
   IsNumber,
   IsEnum,
   IsBoolean,
-  IsOptional,
+  IsArray,
   ValidateNested,
-  ArrayMinSize,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Category, Gender } from '@prisma/client';
 import { CreateVariantDto } from './create-variant.dto';
 
 export class CreateProductDto {
+
   @IsString()
-  @IsNotEmpty()
   name: string;
 
   @IsString()
-  @IsNotEmpty()
   description: string;
 
   @IsNumber()
+  @Min(0)
   price: number;
 
   @IsEnum(Category)
@@ -30,12 +29,11 @@ export class CreateProductDto {
   @IsEnum(Gender)
   gender: Gender;
 
-  @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
+  isActive: boolean;
 
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateVariantDto)
-  @ArrayMinSize(1)
   variants: CreateVariantDto[];
 }

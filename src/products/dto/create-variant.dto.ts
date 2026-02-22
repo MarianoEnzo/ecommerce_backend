@@ -1,10 +1,8 @@
-import { IsEnum, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsEnum, IsInt, IsString, Min } from 'class-validator';
 import { Size } from '@prisma/client';
 
 export class CreateVariantDto {
-  @IsInt()
-  colorId: number;
-
+  
   @IsEnum(Size)
   size: Size;
 
@@ -13,6 +11,8 @@ export class CreateVariantDto {
   stock: number;
 
   @IsString()
-  @IsNotEmpty()
   imageUrl: string;
+
+  @IsInt()
+  colorId: number;
 }
