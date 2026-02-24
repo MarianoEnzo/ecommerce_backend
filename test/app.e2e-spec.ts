@@ -1,9 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+
+// Cargar .env.test para que PrismaService use la DB correcta
+dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
 
 describe('Product E2E', () => {
   let app: INestApplication;
@@ -11,7 +15,13 @@ describe('Product E2E', () => {
   let adminToken: string;
   let sellerToken: string;
   let customerToken: string;
-  let createdProductIds: number[] = [];
+
+  const login = async (email: string, password: string) => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password });
+    return res.body.access_token as string;
+  };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -30,39 +40,27 @@ describe('Product E2E', () => {
     );
     await app.init();
 
-    // Login helper
-    const login = async (email: string, password: string) => {
-      const res = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({ email, password });
-      return res.body.access_token;
-    };
-
     adminToken = await login('admin@test.com', '123456');
     sellerToken = await login('seller@test.com', '123456');
     customerToken = await login('customer@test.com', '123456');
-    const adminProduct = await prisma.product.create({
-      data: {
-        name: 'Test Product',
-        description: 'desc',
-        price: 100,
-        slug: 'test-product',
-        category: 'TSHIRT',
-        gender: 'UNISEX',
-        isActive: true,
-      },
-    });
-    createdProductIds = [adminProduct.id];
+
+    // Verificar que los tokens se obtuvieron correctamente
+    if (!adminToken || !sellerToken || !customerToken) {
+      throw new Error(
+        `Tokens no obtenidos — admin: ${!!adminToken}, seller: ${!!sellerToken}, customer: ${!!customerToken}. ¿Corrió el seed?`,
+      );
+    }
   });
 
   afterAll(async () => {
     await app.close();
   });
 
+  // Limpiar productos y variantes antes de cada test para aislamiento
   beforeEach(async () => {
+    await prisma.cartItem.deleteMany();
     await prisma.productVariant.deleteMany();
     await prisma.product.deleteMany();
-    createdProductIds = [];
   });
 
   // ----------------------------
@@ -160,7 +158,6 @@ describe('Product E2E', () => {
       });
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
-      createdProductIds.push(res.body.id);
     });
 
     it('SELLER can create product', async () => {
@@ -175,7 +172,6 @@ describe('Product E2E', () => {
       });
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
-      createdProductIds.push(res.body.id);
     });
 
     it('CUSTOMER cannot create product', async () => {
@@ -197,6 +193,7 @@ describe('Product E2E', () => {
     });
 
     it('ADMIN can update product', async () => {
+      // Cada test crea su propio producto — sin dependencias entre tests
       const product = await prisma.product.create({
         data: {
           name: 'Temp Product',
@@ -208,11 +205,12 @@ describe('Product E2E', () => {
           isActive: true,
         },
       });
+
       const res = await patchProduct(adminToken, product.id, {
         name: 'Updated Admin Product',
         price: 160,
       });
-      console.log(res);
+
       expect(res.status).toBe(200);
       expect(res.body.name).toBe('Updated Admin Product');
       expect(res.body.price).toBe('160');
@@ -221,44 +219,60 @@ describe('Product E2E', () => {
     it('SELLER can update product', async () => {
       const product = await prisma.product.create({
         data: {
-          name: 'Temp Product',
+          name: 'Temp Product 2',
           description: 'desc',
           price: 100,
-          slug: 'temp-product',
+          slug: 'temp-product-2',
           category: 'TSHIRT',
           gender: 'UNISEX',
           isActive: true,
         },
       });
+
       const res = await patchProduct(sellerToken, product.id, {
         name: 'Updated Seller Product',
         price: 170,
       });
+
       expect(res.status).toBe(200);
       expect(res.body.name).toBe('Updated Seller Product');
       expect(res.body.price).toBe('170');
     });
 
     it('CUSTOMER cannot update product', async () => {
-      const productId = createdProductIds[0];
-      const res = await patchProduct(customerToken, productId, {
+      // Crea su propio producto — no depende de otros tests
+      const product = await prisma.product.create({
+        data: {
+          name: 'Protected Product',
+          description: 'desc',
+          price: 100,
+          slug: 'protected-product',
+          category: 'TSHIRT',
+          gender: 'UNISEX',
+          isActive: true,
+        },
+      });
+
+      const res = await patchProduct(customerToken, product.id, {
         name: 'Should Not Update',
       });
+
       expect(res.status).toBe(403);
     });
 
     it('ADMIN can soft delete product', async () => {
       const product = await prisma.product.create({
         data: {
-          name: 'Temp Product',
+          name: 'To Delete Product',
           description: 'desc',
           price: 100,
-          slug: 'temp-product',
+          slug: 'to-delete-product',
           category: 'TSHIRT',
           gender: 'UNISEX',
           isActive: true,
         },
       });
+
       const res = await deleteProduct(adminToken, product.id);
       expect(res.status).toBe(200);
 

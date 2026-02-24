@@ -101,7 +101,7 @@ model CartItem {
   cartId           String
   productVariantId Int
   quantity         Int
-  unitPrice        Decimal // snapshot price
+  unitPrice        Decimal  @db.Decimal(10, 2)
   createdAt        DateTime @default(now())
 
   cart           Cart           @relation(fields: [cartId], references: [id])
@@ -112,7 +112,7 @@ model CartItem {
 
 model Cart {
   id        String     @id @default(uuid())
-  userId    Int? // null = guest
+  userId    Int?
   status    CartStatus @default(ACTIVE)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -126,12 +126,14 @@ enum CartStatus {
 }
 
 model Order {
-  id          Int         @id @default(autoincrement())
-  cartId      String
-  userId      Int?
-  status      OrderStatus @default(PENDING)
-  totalAmount Decimal
-  createdAt   DateTime    @default(now())
+  id             Int         @id @default(autoincrement())
+  cartId         String
+  userId         Int?
+  status         OrderStatus @default(PENDING)
+  totalAmount    Decimal     @db.Decimal(10, 2)
+  contactName    String
+  contactEmail   String?
+  createdAt      DateTime    @default(now())
 
   items OrderItem[]
 }
@@ -147,7 +149,7 @@ model OrderItem {
   orderId          Int
   productVariantId Int
   quantity         Int
-  unitPrice        Decimal
+  unitPrice        Decimal @db.Decimal(10, 2)
 
   order          Order          @relation(fields: [orderId], references: [id])
   productVariant ProductVariant @relation(fields: [productVariantId], references: [id])

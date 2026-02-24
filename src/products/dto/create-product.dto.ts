@@ -16,12 +16,13 @@ export class CreateProductDto {
   name: string;
 
   @IsString()
+  
   description: string;
 
   @IsNumber()
   @Type(() => Number)
   @Min(0)
-  price: string;
+  price: number;
 
   @IsEnum(Category)
   category: Category;

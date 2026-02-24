@@ -7,7 +7,7 @@ import { CartController } from './cart.controller';
 @Module({
   imports: [PrismaModule],
   controllers: [CartController],
-  providers: [CartService],
+  providers: [CartService, CartMiddleware], // CartMiddleware necesita estar en providers para DI
 })
 export class CartModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

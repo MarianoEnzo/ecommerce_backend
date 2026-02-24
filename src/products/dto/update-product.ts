@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsEnum,
   Min,
+  IsDecimal,
 } from 'class-validator';
 
 export class UpdateProductDto {
@@ -19,10 +20,9 @@ export class UpdateProductDto {
   description?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  price?: number;
+  @IsDecimal({ decimal_digits: '0,2' })
+  @Type(() => String)
+  price?: string;
 
   @IsOptional()
   @IsString()

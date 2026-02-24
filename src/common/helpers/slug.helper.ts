@@ -1,8 +1,8 @@
 import slugify from 'slugify';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 export async function generateUniqueSlug(
-  prisma: PrismaService,
+  prisma: Prisma.TransactionClient,
   model: 'product',
   name: string,
 ): Promise<string> {
