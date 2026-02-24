@@ -25,9 +25,10 @@ export class AuthService {
           password: hashedPassword,
         },
       });
-
+      console.log(user);
       return this.login(user);
     } catch (error) {
+      console.log(error);
       if (error.code === 'P2002') {
         throw new ConflictException('Email already exists');
       } else throw error;

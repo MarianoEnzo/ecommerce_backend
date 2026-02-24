@@ -12,7 +12,6 @@ import { Category, Gender } from '@prisma/client';
 import { CreateVariantDto } from './create-variant.dto';
 
 export class CreateProductDto {
-
   @IsString()
   name: string;
 
@@ -20,8 +19,9 @@ export class CreateProductDto {
   description: string;
 
   @IsNumber()
+  @Type(() => Number)
   @Min(0)
-  price: number;
+  price: string;
 
   @IsEnum(Category)
   category: Category;

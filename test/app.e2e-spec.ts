@@ -1,13 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from 'src/app.module';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { ValidationPipe } from '@nestjs/common';
+import { AppModule } from '../src/app.module';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 describe('Product E2E', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let adminToken: string;
+  let sellerToken: string;
+  let customerToken: string;
+  let createdProductIds: number[] = [];
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -25,6 +29,30 @@ describe('Product E2E', () => {
       }),
     );
     await app.init();
+
+    // Login helper
+    const login = async (email: string, password: string) => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email, password });
+      return res.body.access_token;
+    };
+
+    adminToken = await login('admin@test.com', '123456');
+    sellerToken = await login('seller@test.com', '123456');
+    customerToken = await login('customer@test.com', '123456');
+    const adminProduct = await prisma.product.create({
+      data: {
+        name: 'Test Product',
+        description: 'desc',
+        price: 100,
+        slug: 'test-product',
+        category: 'TSHIRT',
+        gender: 'UNISEX',
+        isActive: true,
+      },
+    });
+    createdProductIds = [adminProduct.id];
   });
 
   afterAll(async () => {
@@ -34,23 +62,21 @@ describe('Product E2E', () => {
   beforeEach(async () => {
     await prisma.productVariant.deleteMany();
     await prisma.product.deleteMany();
+    createdProductIds = [];
   });
 
-  // =========================
-  // PUBLIC TESTS
-  // =========================
-
+  // ----------------------------
+  // Public endpoints
+  // ----------------------------
   describe('Product Public E2E', () => {
     it('GET /products should return 200 and empty array', async () => {
       const res = await request(app.getHttpServer()).get('/products');
-
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
     });
 
     it('GET /products/:id should return 404 if not exists', async () => {
       const res = await request(app.getHttpServer()).get('/products/999');
-
       expect(res.status).toBe(404);
     });
 
@@ -90,10 +116,7 @@ describe('Product E2E', () => {
 
       await prisma.product.update({
         where: { id: product.id },
-        data: {
-          isActive: false,
-          deletedAt: new Date(),
-        },
+        data: { isActive: false, deletedAt: new Date() },
       });
 
       const res = await request(app.getHttpServer()).get('/products');
@@ -104,99 +127,150 @@ describe('Product E2E', () => {
     });
   });
 
-  // =========================
-  // ADMIN TESTS
-  // =========================
-
+  // ----------------------------
+  // Admin endpoints
+  // ----------------------------
   describe('Product Admin E2E', () => {
-    it('POST /admin/products should create product', async () => {
-      const res = await request(app.getHttpServer())
+    const postProduct = (token: string, payload: any) =>
+      request(app.getHttpServer())
         .post('/admin/products')
-        .send({
-          name: 'Test Product',
-          description: 'Testing',
-          price: 100,
-          category: 'TSHIRT',
-          gender: 'UNISEX',
-          variants: [],
-        });
+        .set('Authorization', `Bearer ${token}`)
+        .send(payload);
 
+    const patchProduct = (token: string, id: number, payload: any) =>
+      request(app.getHttpServer())
+        .patch(`/admin/products/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(payload);
+
+    const deleteProduct = (token: string, id: number) =>
+      request(app.getHttpServer())
+        .delete(`/admin/products/${id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+    it('ADMIN can create product', async () => {
+      const res = await postProduct(adminToken, {
+        name: 'Admin Product',
+        description: 'Admin created product',
+        price: 100,
+        category: 'TSHIRT',
+        gender: 'MALE',
+        variants: [],
+        isActive: true,
+      });
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
+      createdProductIds.push(res.body.id);
     });
 
-    it('POST /admin/products should fail validation', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/admin/products')
-        .send({
-          name: '',
-          price: -10,
-        });
-      console.log(res.body);
+    it('SELLER can create product', async () => {
+      const res = await postProduct(sellerToken, {
+        name: 'Seller Product',
+        description: 'Seller created product',
+        price: 120,
+        category: 'JACKET',
+        gender: 'FEMALE',
+        variants: [],
+        isActive: true,
+      });
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('id');
+      createdProductIds.push(res.body.id);
+    });
+
+    it('CUSTOMER cannot create product', async () => {
+      const res = await postProduct(customerToken, {
+        name: 'Forbidden Product',
+        description: 'Should not create',
+        price: 50,
+        category: 'TSHIRT',
+        gender: 'UNISEX',
+        variants: [],
+        isActive: true,
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it('Validation fails if missing fields', async () => {
+      const res = await postProduct(adminToken, { name: '', price: -10 });
       expect(res.status).toBe(400);
     });
 
-    it('PATCH should update product', async () => {
+    it('ADMIN can update product', async () => {
       const product = await prisma.product.create({
         data: {
-          name: 'Old Name',
+          name: 'Temp Product',
           description: 'desc',
-          price: 50,
-          slug: 'old-name',
+          price: 100,
+          slug: 'temp-product',
           category: 'TSHIRT',
           gender: 'UNISEX',
+          isActive: true,
         },
       });
-
-      const res = await request(app.getHttpServer())
-        .patch(`/admin/products/${product.id}`)
-        .send({
-          name: 'New Name',
-        });
-
+      const res = await patchProduct(adminToken, product.id, {
+        name: 'Updated Admin Product',
+        price: 160,
+      });
+      console.log(res);
       expect(res.status).toBe(200);
-      expect(res.body.name).toBe('New Name');
+      expect(res.body.name).toBe('Updated Admin Product');
+      expect(res.body.price).toBe('160');
     });
 
-    it('PATCH should return 404 if product not exists', async () => {
-      const res = await request(app.getHttpServer())
-        .patch('/admin/products/999')
-        .send({ name: 'Test' });
-
-      expect(res.status).toBe(404);
-    });
-
-    it('DELETE should soft delete product', async () => {
+    it('SELLER can update product', async () => {
       const product = await prisma.product.create({
         data: {
-          name: 'Delete Me',
+          name: 'Temp Product',
           description: 'desc',
-          price: 50,
-          slug: 'delete-me',
+          price: 100,
+          slug: 'temp-product',
           category: 'TSHIRT',
           gender: 'UNISEX',
+          isActive: true,
         },
       });
+      const res = await patchProduct(sellerToken, product.id, {
+        name: 'Updated Seller Product',
+        price: 170,
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe('Updated Seller Product');
+      expect(res.body.price).toBe('170');
+    });
 
-      const res = await request(app.getHttpServer()).delete(
-        `/admin/products/${product.id}`,
-      );
+    it('CUSTOMER cannot update product', async () => {
+      const productId = createdProductIds[0];
+      const res = await patchProduct(customerToken, productId, {
+        name: 'Should Not Update',
+      });
+      expect(res.status).toBe(403);
+    });
 
+    it('ADMIN can soft delete product', async () => {
+      const product = await prisma.product.create({
+        data: {
+          name: 'Temp Product',
+          description: 'desc',
+          price: 100,
+          slug: 'temp-product',
+          category: 'TSHIRT',
+          gender: 'UNISEX',
+          isActive: true,
+        },
+      });
+      const res = await deleteProduct(adminToken, product.id);
       expect(res.status).toBe(200);
 
       const deleted = await prisma.product.findUnique({
         where: { id: product.id },
       });
-
       expect(deleted?.isActive).toBe(false);
       expect(deleted?.deletedAt).not.toBeNull();
     });
 
-    it('DELETE should return 404 if product not exists', async () => {
-      const res = await request(app.getHttpServer()).delete(
-        '/admin/products/999',
-      );
-
+    it('DELETE returns 404 if product not exists', async () => {
+      const res = await deleteProduct(adminToken, 999);
       expect(res.status).toBe(404);
     });
   });

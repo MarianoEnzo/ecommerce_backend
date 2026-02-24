@@ -1,4 +1,5 @@
-import { PrismaClient, Category, Gender, Size } from '@prisma/client';
+import { PrismaClient, Category, Gender, Size, Role } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -20,6 +21,21 @@ function randomStock() {
 
 async function main() {
   console.log('🌱 Seeding...');
+  // 1️⃣ Crear usuarios de prueba
+  const passwordHash = await bcrypt.hash('123456', 10);
+  const usersData = [
+    { email: 'admin@test.com', password: passwordHash, role: Role.ADMIN },
+    { email: 'seller@test.com', password: passwordHash, role: Role.SELLER },
+    { email: 'customer@test.com', password: passwordHash, role: Role.CUSTOMER },
+  ];
+
+  for (const user of usersData) {
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: {},
+      create: user,
+    });
+  }
 
   // 1️⃣ Crear colores si no existen
   for (const color of colorsData) {

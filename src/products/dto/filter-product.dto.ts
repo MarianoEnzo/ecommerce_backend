@@ -1,4 +1,11 @@
-import { IsOptional, IsEnum, IsInt, Min, IsString } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsInt,
+  Min,
+  IsString,
+  IsIn,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { Category, Gender, Size } from '@prisma/client';
 
@@ -48,7 +55,11 @@ export class FilterProductDto {
   @IsInt()
   colorId: number;
 
+  @IsOptional()
+  @IsString()
   sort?: string;
 
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
   order?: 'asc' | 'desc';
 }

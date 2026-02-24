@@ -1,4 +1,5 @@
 import { Category, Gender } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsOptional,
   IsString,
@@ -20,6 +21,7 @@ export class UpdateProductDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Type(() => Number)
   price?: number;
 
   @IsOptional()

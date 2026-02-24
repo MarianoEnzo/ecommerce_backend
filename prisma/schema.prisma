@@ -56,8 +56,10 @@ model ProductVariant {
   color    Color   @relation(fields: [colorId], references: [id])
   imageUrl String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   @@unique([productId, size, colorId])
 }
@@ -92,4 +94,61 @@ enum Size {
   L
   XL
   XXL
+}
+
+model CartItem {
+  id               Int      @id @default(autoincrement())
+  cartId           String
+  productVariantId Int
+  quantity         Int
+  unitPrice        Decimal // snapshot price
+  createdAt        DateTime @default(now())
+
+  cart           Cart           @relation(fields: [cartId], references: [id])
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  @@unique([cartId, productVariantId])
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    Int? // null = guest
+  status    CartStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  items CartItem[]
+}
+
+enum CartStatus {
+  ACTIVE
+  CHECKED_OUT
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  cartId      String
+  userId      Int?
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal
+  createdAt   DateTime    @default(now())
+
+  items OrderItem[]
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model OrderItem {
+  id               Int     @id @default(autoincrement())
+  orderId          Int
+  productVariantId Int
+  quantity         Int
+  unitPrice        Decimal
+
+  order          Order          @relation(fields: [orderId], references: [id])
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
 }
