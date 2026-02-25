@@ -46,6 +46,8 @@ export class ProductService {
 
   // findAll para endpoints públicos — solo productos activos
   async findAll(filters: FilterProductDto = {} as FilterProductDto) {
+    try{
+      console.log('Hola entro', JSON.stringify(filters))
     const {
       page = 1,
       limit = 10,
@@ -100,7 +102,7 @@ export class ProductService {
       }),
       this.prisma.product.count({ where }),
     ]);
-
+    console.log('Termina',products)
     return {
       data: products,
       meta: {
@@ -110,6 +112,9 @@ export class ProductService {
         lastPage: Math.ceil(total / safeLimit),
       },
     };
+    }catch(e){
+      console.log(e)
+    }
   }
 
   // findAll para el panel admin — ve todos incluyendo inactivos/eliminados

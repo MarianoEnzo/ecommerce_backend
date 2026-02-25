@@ -63,6 +63,11 @@ async function bootstrap() {
     logger.log('Swagger disponible en /api');
   }
 
+  app.enableCors({
+  origin: 'http://localhost:5173',
+  credentials: true, 
+});
+
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
   logger.log(`Application running on port ${port}`);
