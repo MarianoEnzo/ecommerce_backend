@@ -46,74 +46,72 @@ export class ProductService {
 
   // findAll para endpoints públicos — solo productos activos
   async findAll(filters: FilterProductDto = {} as FilterProductDto) {
-    try{
-      console.log('Hola entro', JSON.stringify(filters))
-    const {
-      page = 1,
-      limit = 10,
-      category,
-      gender,
-      minPrice,
-      maxPrice,
-      size,
-      colorId,
-      sort = 'createdAt',
-      order = 'desc',
-    } = filters;
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        category,
+        gender,
+        minPrice,
+        maxPrice,
+        size,
+        colorId,
+        sort = 'createdAt',
+        order = 'desc',
+      } = filters;
 
-    const safePage = Math.max(1, Number(page) || 1);
-    const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 50);
+      const safePage = Math.max(1, Number(page) || 1);
+      const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 50);
 
-    const where: Prisma.ProductWhereInput = { isActive: true };
+      const where: Prisma.ProductWhereInput = { isActive: true };
 
-    if (category) where.category = category;
-    if (gender) where.gender = gender;
+      if (category) where.category = category;
+      if (gender) where.gender = gender;
 
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      where.price = {
-        ...(minPrice !== undefined && { gte: new Prisma.Decimal(minPrice) }),
-        ...(maxPrice !== undefined && { lte: new Prisma.Decimal(maxPrice) }),
+      if (minPrice !== undefined || maxPrice !== undefined) {
+        where.price = {
+          ...(minPrice !== undefined && { gte: new Prisma.Decimal(minPrice) }),
+          ...(maxPrice !== undefined && { lte: new Prisma.Decimal(maxPrice) }),
+        };
+      }
+
+      if (size || colorId) {
+        where.variants = {
+          some: {
+            ...(size && { size }),
+            ...(colorId && { colorId }),
+          },
+        };
+      }
+
+      // Whitelist de campos por los que se puede ordenar
+      const allowedSortFields: (keyof Prisma.ProductOrderByWithRelationInput)[] =
+        ['createdAt', 'price', 'name'];
+      const orderBy: Prisma.ProductOrderByWithRelationInput = {
+        [allowedSortFields.includes(sort as any) ? sort : 'createdAt']: order,
       };
-    }
 
-    if (size || colorId) {
-      where.variants = {
-        some: {
-          ...(size && { size }),
-          ...(colorId && { colorId }),
+      const [products, total] = await this.prisma.$transaction([
+        this.prisma.product.findMany({
+          where,
+          skip: (safePage - 1) * safeLimit,
+          take: safeLimit,
+          include: PRODUCT_INCLUDE,
+          orderBy,
+        }),
+        this.prisma.product.count({ where }),
+      ]);
+      return {
+        data: products,
+        meta: {
+          total,
+          page: safePage,
+          limit: safeLimit,
+          lastPage: Math.ceil(total / safeLimit),
         },
       };
-    }
-
-    // Whitelist de campos por los que se puede ordenar
-    const allowedSortFields: (keyof Prisma.ProductOrderByWithRelationInput)[] =
-      ['createdAt', 'price', 'name'];
-    const orderBy: Prisma.ProductOrderByWithRelationInput = {
-      [allowedSortFields.includes(sort as any) ? sort : 'createdAt']: order,
-    };
-
-    const [products, total] = await this.prisma.$transaction([
-      this.prisma.product.findMany({
-        where,
-        skip: (safePage - 1) * safeLimit,
-        take: safeLimit,
-        include: PRODUCT_INCLUDE,
-        orderBy,
-      }),
-      this.prisma.product.count({ where }),
-    ]);
-    console.log('Termina',products)
-    return {
-      data: products,
-      meta: {
-        total,
-        page: safePage,
-        limit: safeLimit,
-        lastPage: Math.ceil(total / safeLimit),
-      },
-    };
-    }catch(e){
-      console.log(e)
+    } catch (e) {
+      e;
     }
   }
 

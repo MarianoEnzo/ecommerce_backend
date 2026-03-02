@@ -83,12 +83,12 @@ describe('Cart E2E', () => {
   // Helper para obtener el cartId de la cookie
   const getCartId = (res: request.Response): string => {
     const setCookie = res.headers['set-cookie'];
-    console.log('set-cookie raw:', setCookie);
+    ('set-cookie raw:', setCookie);
     const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
     const cartCookie = cookies?.find((c: string) => c.startsWith('cartId='));
-    console.log('cartCookie:', cartCookie);
+    ('cartCookie:', cartCookie);
     const id = cartCookie?.split(';')[0].split('=')[1] ?? '';
-    console.log('extracted id:', id);
+    ('extracted id:', id);
     return id;
   };
 

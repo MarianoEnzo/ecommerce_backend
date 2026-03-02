@@ -17,16 +17,14 @@ export class AuthService {
 
   async register(email: string, password: string) {
     try {
-      
-   
-    const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.prisma.user.create({
-      data: { email, password: hashedPassword },
-    });
-    return this.login(user);
-     } catch (error) {
-     console.log(error) 
+      const user = await this.prisma.user.create({
+        data: { email, password: hashedPassword },
+      });
+      return this.login(user);
+    } catch (error) {
+      error;
     }
   }
 
@@ -43,17 +41,15 @@ export class AuthService {
 
   async login(user: User) {
     try {
-      
-   
-    const payload = {
-      sub: user.id,
-      role: user.role,
-    };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
-     } catch (error) {
-      console.log(error)
+      const payload = {
+        sub: user.id,
+        role: user.role,
+      };
+      return {
+        access_token: this.jwtService.sign(payload),
+      };
+    } catch (error) {
+      error;
     }
   }
 }

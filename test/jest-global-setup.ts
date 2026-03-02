@@ -9,14 +9,14 @@ const ROOT = path.resolve(__dirname, '..');
 export default async function globalSetup() {
   dotenv.config({ path: path.resolve(ROOT, '.env.test') });
 
-  console.log('🔄 Aplicando migraciones en DB de test...');
+  ('🔄 Aplicando migraciones en DB de test...');
   execSync('npx prisma migrate deploy', {
     env: { ...process.env },
     stdio: 'inherit',
     cwd: ROOT,
   });
 
-  console.log('🌱 Corriendo seed de test...');
+  ('🌱 Corriendo seed de test...');
   const prisma = new PrismaClient();
 
   try {
@@ -40,7 +40,7 @@ export default async function globalSetup() {
       create: { email: 'customer@test.com', password, role: Role.CUSTOMER },
     });
 
-    console.log('✅ DB de test lista');
+    ('✅ DB de test lista');
   } finally {
     await prisma.$disconnect();
   }
