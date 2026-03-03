@@ -91,12 +91,19 @@ export class ProductService {
         [allowedSortFields.includes(sort as any) ? sort : 'createdAt']: order,
       };
 
+      const include: Prisma.ProductInclude = {
+        variants: {
+          where: size ? { size } : undefined,
+          include: { color: true },
+        },
+      };
+
       const [products, total] = await this.prisma.$transaction([
         this.prisma.product.findMany({
           where,
           skip: (safePage - 1) * safeLimit,
           take: safeLimit,
-          include: PRODUCT_INCLUDE,
+          include: include,
           orderBy,
         }),
         this.prisma.product.count({ where }),

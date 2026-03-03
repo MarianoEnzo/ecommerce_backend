@@ -20,6 +20,19 @@ const COLORS = [
   { name: 'Aquamarine', hexCode: '#5FBFAD' },
 ];
 
+const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+const MALE_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+const FEMALE_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
+const UNISEX_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+function pickSizes(pool: string[], count: number): string[] {
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled
+    .slice(0, count)
+    .sort((a, b) => ALL_SIZES.indexOf(a) - ALL_SIZES.indexOf(b));
+}
+
 const img = (path: string) => `${BASE}/${TRANSFORM}/${path}`;
 
 async function main() {
@@ -63,10 +76,18 @@ async function main() {
       },
     });
 
+    const sizePool =
+      data.gender === 'MALE'
+        ? MALE_SIZES
+        : data.gender === 'FEMALE'
+          ? FEMALE_SIZES
+          : UNISEX_SIZES;
+
     for (const variant of data.variants) {
       const colorId =
         colorMap[variant.colorName.toLowerCase().replace(' ', '')];
-      const sizes = variant.sizes ?? ['S', 'M', 'L', 'XL'];
+      const sizes =
+        variant.sizes ?? pickSizes(sizePool, Math.floor(Math.random() * 2) + 3);
       for (const size of sizes) {
         await prisma.productVariant.create({
           data: {
@@ -81,7 +102,6 @@ async function main() {
     }
   };
 
-  // TSHIRTS
   await createProduct({
     name: 'Basic Fit Tee',
     description: 'Essential unisex tee with a clean fit.',
@@ -266,7 +286,6 @@ async function main() {
     ],
   });
 
-  // SWEATSHIRTS
   await createProduct({
     name: 'Unisex Hoodie',
     description: 'Heavyweight hoodie for any season.',
@@ -393,7 +412,6 @@ async function main() {
     ],
   });
 
-  // JACKETS
   await createProduct({
     name: 'Vest Jacket',
     description: 'Sleeveless jacket for layered looks.',
@@ -464,7 +482,6 @@ async function main() {
     ],
   });
 
-  // PANTS
   await createProduct({
     name: 'Sweatpant',
     description: 'Relaxed sweatpant for comfort and style.',
@@ -497,22 +514,21 @@ async function main() {
       {
         colorName: 'black',
         imageUrl: img('v1772211705/male-pant-short-black.jpg'),
-        sizes: ['XS', 'S', 'M', 'L', 'XL'],
+        sizes: ['L', 'XL', 'XXL'],
       },
       {
         colorName: 'grey',
         imageUrl: img('v1772211707/male-pant-short-grey.jpg'),
-        sizes: ['XS', 'S', 'M', 'L', 'XL'],
+        sizes: ['XS', 'S'],
       },
       {
         colorName: 'white',
         imageUrl: img('v1772211711/male-pant-short-white.jpg'),
-        sizes: ['XS', 'S', 'M', 'L', 'XL'],
+        sizes: ['S', 'M', 'XL'],
       },
     ],
   });
 
-  // SHOES
   await createProduct({
     name: 'Sport Sneaker',
     description: 'Clean sport sneaker for everyday use.',
@@ -523,12 +539,10 @@ async function main() {
       {
         colorName: 'blue',
         imageUrl: img('v1772211733/unisex-shoes-sport-blue.jpg'),
-        sizes: ['S', 'M', 'L', 'XL'],
+        sizes: ['S', 'M', 'XL'],
       },
     ],
   });
-
-  ('Seed completado — 21 productos creados.');
 }
 
 main()
