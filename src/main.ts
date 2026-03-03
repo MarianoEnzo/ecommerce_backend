@@ -62,7 +62,7 @@ async function bootstrap() {
   app.enableCors({
     origin:
       process.env.NODE_ENV === 'production'
-        ? ['https://urbn.mequiroga.com', 'https://mequiroga.com']
+        ? ['https://urbancraft.mequiroga.com', 'https://mequiroga.com']
         : 'http://localhost:5173',
     credentials: true,
   });
