@@ -20,13 +20,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
-    // NestJS a veces devuelve un objeto, a veces un string
     const message =
       typeof exceptionResponse === 'object' && 'message' in exceptionResponse
         ? (exceptionResponse as any).message
         : exceptionResponse;
 
-    // Solo loguear errores 5xx — los 4xx son errores del cliente, no nuestros
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
         `[${request.method}] ${request.url} → ${status}`,

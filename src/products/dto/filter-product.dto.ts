@@ -60,6 +60,10 @@ export class FilterProductDto {
   sort?: string;
 
   @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
   @IsIn(['asc', 'desc'])
   order?: 'asc' | 'desc';
 }

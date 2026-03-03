@@ -4,10 +4,6 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
 
-// Los errores de Prisma (P2002 duplicate email, etc.) ya no se manejan acá —
-// el PrismaExceptionFilter global los intercepta y devuelve la respuesta correcta.
-// El service solo maneja lógica de negocio.
-
 @Injectable()
 export class AuthService {
   constructor(

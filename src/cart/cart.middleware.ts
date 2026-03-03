@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 const CART_COOKIE = 'cartId';
-const CART_MAX_AGE = 1000 * 60 * 60 * 24 * 30; // 30 días en ms
+const CART_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
 
 @Injectable()
 export class CartMiddleware implements NestMiddleware {
@@ -26,7 +26,6 @@ export class CartMiddleware implements NestMiddleware {
         }
       }
 
-      // No hay cookie válida — crear nuevo carrito
       const newCart = await this.prisma.cart.create({ data: {} });
 
       res.cookie(CART_COOKIE, newCart.id, {
@@ -40,7 +39,7 @@ export class CartMiddleware implements NestMiddleware {
       next();
     } catch (error) {
       this.logger.error('Failed to resolve cart', error);
-      next(error); // propaga al filtro global de excepciones
+      next(error);
     }
   }
 }

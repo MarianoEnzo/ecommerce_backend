@@ -18,14 +18,10 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(
-    new HttpExceptionFilter(),
-    new PrismaExceptionFilter(),
-  );
+  app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter());
 
   app.use(cookieParser());
 
-  // Swagger — solo en desarrollo
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Ecommerce API')
@@ -64,9 +60,9 @@ async function bootstrap() {
   }
 
   app.enableCors({
-  origin: 'http://localhost:5173',
-  credentials: true, 
-});
+    origin: 'http://localhost:5173',
+    credentials: true,
+  });
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

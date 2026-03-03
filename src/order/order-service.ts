@@ -9,7 +9,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order-dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
-// Transiciones de estado válidas — evita cambios de estado incoherentes
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   PENDING: [OrderStatus.PAID, OrderStatus.CANCELLED],
   PAID: [OrderStatus.CANCELLED],
@@ -52,7 +51,6 @@ export class OrderService {
       throw new BadRequestException('Cannot place an order with an empty cart');
     }
 
-    // Validar stock de todos los items antes de tocar nada
     const stockErrors: string[] = [];
 
     for (const item of cart.items) {
@@ -90,7 +88,7 @@ export class OrderService {
       const newOrder = await tx.order.create({
         data: {
           cartId: cart.id,
-          userId, // null si es guest, id si está logueado
+          userId,
           contactName: dto.contactName,
           contactEmail: dto.contactEmail,
           totalAmount,

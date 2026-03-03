@@ -105,7 +105,7 @@ async function main() {
   await createProduct({
     name: 'Basic Fit Tee',
     description: 'Essential unisex tee with a clean fit.',
-    price: 12500,
+    price: 25.99,
     category: 'TSHIRT',
     gender: 'UNISEX',
     variants: [
@@ -135,7 +135,7 @@ async function main() {
   await createProduct({
     name: 'Void Tee',
     description: 'Minimalist streetwear staple.',
-    price: 11000,
+    price: 22.99,
     category: 'TSHIRT',
     gender: 'UNISEX',
     variants: [
@@ -165,7 +165,7 @@ async function main() {
   await createProduct({
     name: 'Polo Classic',
     description: 'Clean polo for everyday wear.',
-    price: 15000,
+    price: 35.99,
     category: 'TSHIRT',
     gender: 'MALE',
     variants: [
@@ -195,7 +195,7 @@ async function main() {
   await createProduct({
     name: 'Oversize Raw',
     description: 'Relaxed oversize cut with dropped shoulders.',
-    price: 13500,
+    price: 29.99,
     category: 'TSHIRT',
     gender: 'MALE',
     variants: [
@@ -221,7 +221,7 @@ async function main() {
   await createProduct({
     name: 'Tank Top Bird',
     description: 'Lightweight tank with graphic detail.',
-    price: 9500,
+    price: 19.99,
     category: 'TSHIRT',
     gender: 'MALE',
     variants: [
@@ -247,7 +247,7 @@ async function main() {
   await createProduct({
     name: 'Deportive Fit',
     description: 'Sporty fit tee for active looks.',
-    price: 11500,
+    price: 24.99,
     category: 'TSHIRT',
     gender: 'FEMALE',
     variants: [
@@ -273,7 +273,7 @@ async function main() {
   await createProduct({
     name: 'Relaxed Tee',
     description: 'Easy relaxed fit for all-day comfort.',
-    price: 10500,
+    price: 22.99,
     category: 'TSHIRT',
     gender: 'FEMALE',
     variants: [
@@ -289,7 +289,7 @@ async function main() {
   await createProduct({
     name: 'Unisex Hoodie',
     description: 'Heavyweight hoodie for any season.',
-    price: 28000,
+    price: 59.99,
     category: 'SWEATSHIRT',
     gender: 'UNISEX',
     variants: [
@@ -315,7 +315,7 @@ async function main() {
   await createProduct({
     name: 'Unisex Crewneck',
     description: 'Classic crewneck sweatshirt.',
-    price: 24000,
+    price: 49.99,
     category: 'SWEATSHIRT',
     gender: 'UNISEX',
     variants: [
@@ -345,7 +345,7 @@ async function main() {
   await createProduct({
     name: 'Women Hoodie',
     description: 'Relaxed hoodie fit for women.',
-    price: 26000,
+    price: 55.99,
     category: 'SWEATSHIRT',
     gender: 'FEMALE',
     variants: [
@@ -367,7 +367,7 @@ async function main() {
   await createProduct({
     name: 'Women Crewneck',
     description: 'Soft crewneck with feminine silhouette.',
-    price: 22000,
+    price: 45.99,
     category: 'SWEATSHIRT',
     gender: 'FEMALE',
     variants: [
@@ -393,7 +393,7 @@ async function main() {
   await createProduct({
     name: 'Turtleneck',
     description: 'Structured turtleneck for a clean silhouette.',
-    price: 26000,
+    price: 52.99,
     category: 'SWEATSHIRT',
     gender: 'MALE',
     variants: [
@@ -415,7 +415,7 @@ async function main() {
   await createProduct({
     name: 'Vest Jacket',
     description: 'Sleeveless jacket for layered looks.',
-    price: 32000,
+    price: 69.99,
     category: 'JACKET',
     gender: 'MALE',
     variants: [
@@ -437,7 +437,7 @@ async function main() {
   await createProduct({
     name: 'Anorak',
     description: 'Lightweight anorak for wind and rain.',
-    price: 38000,
+    price: 89.99,
     category: 'JACKET',
     gender: 'UNISEX',
     variants: [
@@ -463,7 +463,7 @@ async function main() {
   await createProduct({
     name: 'Windbreaker',
     description: 'Technical windbreaker with clean lines.',
-    price: 42000,
+    price: 99.99,
     category: 'JACKET',
     gender: 'FEMALE',
     variants: [
@@ -485,7 +485,7 @@ async function main() {
   await createProduct({
     name: 'Sweatpant',
     description: 'Relaxed sweatpant for comfort and style.',
-    price: 18000,
+    price: 39.99,
     category: 'PANTS',
     gender: 'UNISEX',
     variants: [
@@ -507,7 +507,7 @@ async function main() {
   await createProduct({
     name: 'Sport Short',
     description: 'Lightweight short for training or casual wear.',
-    price: 14000,
+    price: 29.99,
     category: 'PANTS',
     gender: 'MALE',
     variants: [
@@ -532,7 +532,7 @@ async function main() {
   await createProduct({
     name: 'Sport Sneaker',
     description: 'Clean sport sneaker for everyday use.',
-    price: 52000,
+    price: 119.99,
     category: 'SHOES',
     gender: 'UNISEX',
     variants: [

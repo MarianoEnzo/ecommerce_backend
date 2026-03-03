@@ -10,7 +10,6 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { FilterProductDto } from './dto/filter-product.dto';
 import { UpdateProductDto } from './dto/update-product';
 
-// Include reutilizable para no repetirlo en cada query
 const PRODUCT_INCLUDE = {
   variants: {
     include: { color: true },
@@ -23,7 +22,6 @@ export class ProductService {
 
   async create(dto: CreateProductDto) {
     return this.prisma.$transaction(async (tx) => {
-      // Slug generado dentro de la transacción para evitar race conditions
       const slug = await generateUniqueSlug(tx, 'product', dto.name);
 
       return tx.product.create({
@@ -44,7 +42,6 @@ export class ProductService {
     });
   }
 
-  // findAll para endpoints públicos — solo productos activos
   async findAll(filters: FilterProductDto = {} as FilterProductDto) {
     try {
       const {
@@ -58,7 +55,20 @@ export class ProductService {
         colorId,
         sort = 'createdAt',
         order = 'desc',
+        search,
       } = filters;
+
+      const categoryMap: Record<string, string> = {
+        shirt: 'TSHIRT',
+        tshirt: 'TSHIRT',
+        't-shirt': 'TSHIRT',
+        hoodie: 'SWEATSHIRT',
+        sweatshirt: 'SWEATSHIRT',
+        jacket: 'JACKET',
+        jackets: 'JACKET',
+        pant: 'PANTS',
+        pants: 'PANTS',
+      };
 
       const safePage = Math.max(1, Number(page) || 1);
       const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 50);
@@ -84,7 +94,6 @@ export class ProductService {
         };
       }
 
-      // Whitelist de campos por los que se puede ordenar
       const allowedSortFields: (keyof Prisma.ProductOrderByWithRelationInput)[] =
         ['createdAt', 'price', 'name'];
       const orderBy: Prisma.ProductOrderByWithRelationInput = {
@@ -98,6 +107,14 @@ export class ProductService {
         },
       };
 
+      if (search) {
+        const mappedCategory = categoryMap[search.toLowerCase()];
+        where.OR = [
+          { name: { contains: search } },
+          { description: { contains: search } },
+          ...(mappedCategory ? [{ category: mappedCategory as any }] : []),
+        ];
+      }
       const [products, total] = await this.prisma.$transaction([
         this.prisma.product.findMany({
           where,
@@ -122,7 +139,6 @@ export class ProductService {
     }
   }
 
-  // findAll para el panel admin — ve todos incluyendo inactivos/eliminados
   async findAllAdmin(filters: FilterProductDto = {} as FilterProductDto) {
     const {
       page = 1,
@@ -140,7 +156,6 @@ export class ProductService {
     const safePage = Math.max(1, Number(page) || 1);
     const safeLimit = Math.min(Math.max(1, Number(limit) || 10), 50);
 
-    // Sin filtro de isActive — el admin ve todo
     const where: Prisma.ProductWhereInput = {};
 
     if (category) where.category = category;
@@ -190,7 +205,6 @@ export class ProductService {
     };
   }
 
-  // findOne interno — usado por update/remove, ve productos inactivos también
   async findOne(id: number) {
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -202,7 +216,6 @@ export class ProductService {
     return product;
   }
 
-  // findOne público — solo productos activos
   async findOnePublic(id: number) {
     const product = await this.prisma.product.findFirst({
       where: { id, isActive: true },

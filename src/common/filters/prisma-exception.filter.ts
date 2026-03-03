@@ -26,7 +26,6 @@ export class PrismaExceptionFilter implements ExceptionFilter {
       return this.handleKnownError(exception, response);
     }
 
-    // PrismaClientValidationError — query mal formada, es un bug nuestro
     this.logger.error('Prisma validation error', exception.message);
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -40,10 +39,11 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     response: Response,
   ) {
     switch (exception.code) {
-      // Unique constraint violation
       case 'P2002': {
         const fields = (exception.meta?.target as string[]) ?? ['field'];
-        this.logger.warn(`Unique constraint violation on: ${fields.join(', ')}`);
+        this.logger.warn(
+          `Unique constraint violation on: ${fields.join(', ')}`,
+        );
         return response.status(HttpStatus.CONFLICT).json({
           statusCode: HttpStatus.CONFLICT,
           error: 'Conflict',
@@ -51,7 +51,6 @@ export class PrismaExceptionFilter implements ExceptionFilter {
         });
       }
 
-      // Record not found (update/delete sobre un id que no existe)
       case 'P2025':
         this.logger.warn('Record not found', exception.meta?.cause);
         return response.status(HttpStatus.NOT_FOUND).json({
@@ -60,7 +59,6 @@ export class PrismaExceptionFilter implements ExceptionFilter {
           message: 'Record not found',
         });
 
-      // Foreign key constraint violation
       case 'P2003':
         this.logger.warn('Foreign key constraint violation', exception.meta);
         return response.status(HttpStatus.BAD_REQUEST).json({
@@ -69,7 +67,6 @@ export class PrismaExceptionFilter implements ExceptionFilter {
           message: 'Related record not found',
         });
 
-      // Null constraint violation
       case 'P2011':
         this.logger.warn('Null constraint violation', exception.meta);
         return response.status(HttpStatus.BAD_REQUEST).json({

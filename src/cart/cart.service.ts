@@ -12,9 +12,6 @@ import { UpdateItemDto } from './dto/update-item.dto';
 export class CartService {
   constructor(private prisma: PrismaService) {}
 
-  // El middleware garantiza que cartId siempre existe y es válido antes de llegar acá.
-  // El service solo trabaja con carritos ya resueltos.
-
   async getCart(cartId: string) {
     const cart = await this.prisma.cart.findUnique({
       where: { id: cartId },
@@ -34,7 +31,6 @@ export class CartService {
 
     if (!cart) throw new NotFoundException('Cart not found');
 
-    // Total calculado con Decimal para evitar errores de punto flotante
     const total = cart.items.reduce((acc, item) => {
       return acc.add(new Prisma.Decimal(item.unitPrice).mul(item.quantity));
     }, new Prisma.Decimal(0));
@@ -48,7 +44,6 @@ export class CartService {
   async addItem(cartId: string, dto: AddItemDto) {
     const { productVariantId, quantity } = dto;
 
-    // Verificar que la variante existe, tiene stock y el producto está activo
     const variant = await this.prisma.productVariant.findUnique({
       where: { id: productVariantId },
       include: { product: true },
@@ -58,7 +53,6 @@ export class CartService {
       throw new NotFoundException('Product not available');
     }
 
-    // Verificar si el item ya está en el carrito
     const existingItem = await this.prisma.cartItem.findUnique({
       where: {
         cartId_productVariantId: { cartId, productVariantId },
@@ -75,7 +69,6 @@ export class CartService {
     }
 
     if (existingItem) {
-      // Solo actualiza la cantidad — el unitPrice es snapshot y no cambia
       return this.prisma.cartItem.update({
         where: { id: existingItem.id },
         data: { quantity: newQty },
@@ -85,13 +78,12 @@ export class CartService {
       });
     }
 
-    // Item nuevo — se toma snapshot del precio actual
     return this.prisma.cartItem.create({
       data: {
         cartId,
         productVariantId,
         quantity,
-        unitPrice: variant.product.price, // snapshot: no cambia aunque el precio cambie después
+        unitPrice: variant.product.price,
       },
       include: {
         productVariant: { include: { product: true, color: true } },
@@ -150,7 +142,6 @@ export class CartService {
     await this.prisma.cartItem.deleteMany({ where: { cartId } });
   }
 
-  // Llamado al hacer checkout — marca el carrito como cerrado
   async checkoutCart(cartId: string) {
     const cart = await this.prisma.cart.findFirst({
       where: { id: cartId, status: 'ACTIVE' },
