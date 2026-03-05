@@ -35,6 +35,9 @@ export class OrderService {
     userId: number | null,
     res: Response,
   ) {
+    try {
+      
+    
     const cart = await this.prisma.cart.findFirst({
       where: { id: cartId, status: 'ACTIVE' },
       include: {
@@ -74,43 +77,43 @@ export class OrderService {
     const totalAmount = cart.items.reduce((acc, item) => {
       return acc.add(new Prisma.Decimal(item.unitPrice).mul(item.quantity));
     }, new Prisma.Decimal(0));
-
-    const order = await this.prisma.$transaction(async (tx) => {
-      await Promise.all(
-        cart.items.map((item) =>
-          tx.productVariant.update({
+    const order = await this.prisma.$transaction(
+      async (tx) => {
+        for (const item of cart.items) {
+          await tx.productVariant.update({
             where: { id: item.productVariantId },
             data: { stock: { decrement: item.quantity } },
-          }),
-        ),
-      );
+          });
+        }
 
-      const newOrder = await tx.order.create({
-        data: {
-          cartId: cart.id,
-          userId,
-          contactName: dto.contactName,
-          contactEmail: dto.contactEmail,
-          totalAmount,
-          status: 'PENDING',
-          items: {
-            create: cart.items.map((item) => ({
-              productVariantId: item.productVariantId,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-            })),
+        const newOrder = await tx.order.create({
+          data: {
+            cartId: cart.id,
+            userId,
+            contactName: dto.contactName,
+            contactEmail: dto.contactEmail,
+            totalAmount,
+            status: 'PENDING',
+            items: {
+              create: cart.items.map((item) => ({
+                productVariantId: item.productVariantId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+              })),
+            },
           },
-        },
-        include: ORDER_INCLUDE,
-      });
+          include: ORDER_INCLUDE,
+        });
 
-      await tx.cart.update({
-        where: { id: cart.id },
-        data: { status: 'CHECKED_OUT' },
-      });
+        await tx.cart.update({
+          where: { id: cart.id },
+          data: { status: 'CHECKED_OUT' },
+        });
 
-      return newOrder;
-    });
+        return newOrder;
+      },
+      { timeout: 15000 },
+    );
 
     res.clearCookie('cartId', {
       httpOnly: true,
@@ -119,6 +122,9 @@ export class OrderService {
     });
 
     return order;
+    } catch (error) {
+
+    }
   }
 
   async findOne(id: number) {

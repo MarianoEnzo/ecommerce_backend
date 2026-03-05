@@ -7,12 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  SELLER
-  CUSTOMER
-}
-
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -23,21 +17,18 @@ model User {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   name        String
-  slug        String   @unique
+  slug        String           @unique
   description String?
-  price       Decimal  @db.Decimal(10, 2)
+  price       Decimal          @db.Decimal(10, 2)
   category    Category
   gender      Gender
-
-  isActive  Boolean   @default(true)
-  deletedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  variants ProductVariant[]
+  isActive    Boolean          @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  variants    ProductVariant[]
 
   @@index([price])
   @@index([createdAt])
@@ -45,32 +36,83 @@ model Product {
 }
 
 model ProductVariant {
-  id Int @id @default(autoincrement())
-
-  productId Int
-  product   Product @relation(fields: [productId], references: [id])
-
-  size     Size
-  stock    Int
-  colorId  Int
-  color    Color   @relation(fields: [colorId], references: [id])
-  imageUrl String?
-
+  id         Int         @id @default(autoincrement())
+  productId  Int
+  size       Size
+  stock      Int
+  colorId    Int
+  imageUrl   String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   cartItems  CartItem[]
   orderItems OrderItem[]
+  color      Color       @relation(fields: [colorId], references: [id])
+  product    Product     @relation(fields: [productId], references: [id])
 
   @@unique([productId, size, colorId])
+  @@index([colorId], map: "ProductVariant_colorId_fkey")
 }
 
 model Color {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
+  id        Int              @id @default(autoincrement())
+  name      String           @unique
   hexCode   String
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
+  variants  ProductVariant[]
+}
 
-  variants ProductVariant[]
+model CartItem {
+  id               Int            @id @default(autoincrement())
+  cartId           String
+  productVariantId Int
+  quantity         Int
+  unitPrice        Decimal        @db.Decimal(10, 2)
+  createdAt        DateTime       @default(now())
+  cart             Cart           @relation(fields: [cartId], references: [id])
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  @@unique([cartId, productVariantId])
+  @@index([productVariantId], map: "CartItem_productVariantId_fkey")
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    Int?
+  status    CartStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+}
+
+model Order {
+  id           Int         @id @default(autoincrement())
+  cartId       String
+  userId       Int?
+  status       OrderStatus @default(PENDING)
+  totalAmount  Decimal     @db.Decimal(10, 2)
+  createdAt    DateTime    @default(now())
+  contactEmail String?
+  contactName  String
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id               Int            @id @default(autoincrement())
+  orderId          Int
+  productVariantId Int
+  quantity         Int
+  unitPrice        Decimal        @db.Decimal(10, 2)
+  order            Order          @relation(fields: [orderId], references: [id])
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  @@index([orderId], map: "OrderItem_orderId_fkey")
+  @@index([productVariantId], map: "OrderItem_productVariantId_fkey")
+}
+
+enum Role {
+  ADMIN
+  SELLER
+  CUSTOMER
 }
 
 enum Gender {
@@ -96,61 +138,13 @@ enum Size {
   XXL
 }
 
-model CartItem {
-  id               Int      @id @default(autoincrement())
-  cartId           String
-  productVariantId Int
-  quantity         Int
-  unitPrice        Decimal  @db.Decimal(10, 2)
-  createdAt        DateTime @default(now())
-
-  cart           Cart           @relation(fields: [cartId], references: [id])
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
-
-  @@unique([cartId, productVariantId])
-}
-
-model Cart {
-  id        String     @id @default(uuid())
-  userId    Int?
-  status    CartStatus @default(ACTIVE)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  items CartItem[]
-}
-
 enum CartStatus {
   ACTIVE
   CHECKED_OUT
-}
-
-model Order {
-  id             Int         @id @default(autoincrement())
-  cartId         String
-  userId         Int?
-  status         OrderStatus @default(PENDING)
-  totalAmount    Decimal     @db.Decimal(10, 2)
-  contactName    String
-  contactEmail   String?
-  createdAt      DateTime    @default(now())
-
-  items OrderItem[]
 }
 
 enum OrderStatus {
   PENDING
   PAID
   CANCELLED
-}
-
-model OrderItem {
-  id               Int     @id @default(autoincrement())
-  orderId          Int
-  productVariantId Int
-  quantity         Int
-  unitPrice        Decimal @db.Decimal(10, 2)
-
-  order          Order          @relation(fields: [orderId], references: [id])
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
 }
