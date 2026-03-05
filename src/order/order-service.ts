@@ -34,10 +34,7 @@ export class OrderService {
     dto: CreateOrderDto,
     userId: number | null,
     res: Response,
-  ) {
-    try {
-      
-    
+  ) {      
     const cart = await this.prisma.cart.findFirst({
       where: { id: cartId, status: 'ACTIVE' },
       include: {
@@ -122,9 +119,7 @@ export class OrderService {
     });
 
     return order;
-    } catch (error) {
-
-    }
+ 
   }
 
   async findOne(id: number) {
