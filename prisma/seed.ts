@@ -51,10 +51,28 @@ async function main() {
     colors.map((c) => [c.name.toLowerCase().replace(' ', ''), c.id]),
   );
 
-  const slug = (name: string) =>
-    name.toLowerCase().replace(/\s+/g, '-') +
-    '-' +
-    Math.random().toString(36).slice(2, 6);
+  const SLUGS: Record<string, string> = {
+    'Basic Fit Tee': 'basic-fit-tee-br8f',
+    'Void Tee': 'void-tee-2r5o',
+    'Polo Classic': 'polo-classic-rt4e',
+    'Oversize Raw': 'oversize-raw-iqx3',
+    'Tank Top Bird': 'tank-top-bird-8me5',
+    'Deportive Fit': 'deportive-fit-snzk',
+    'Relaxed Tee': 'relaxed-tee-w3om',
+    'Unisex Hoodie': 'unisex-hoodie-0vl0',
+    'Unisex Crewneck': 'unisex-crewneck-2cwj',
+    'Women Hoodie': 'women-hoodie-nwz9',
+    'Women Crewneck': 'women-crewneck-3wa0',
+    Turtleneck: 'turtleneck-addj',
+    'Vest Jacket': 'vest-jacket-13wg',
+    Anorak: 'anorak-tddx',
+    Windbreaker: 'windbreaker-7hnt',
+    Sweatpant: 'sweatpant-6jor',
+    'Sport Short': 'sport-short-j0p9',
+    'Sport Sneaker': 'sport-sneaker-4233',
+  };
+
+  const slug = (name: string) => SLUGS[name];
 
   const createProduct = async (data: {
     name: string;
@@ -547,7 +565,6 @@ async function main() {
 
 main()
   .catch((e) => {
-
     console.error(e);
     process.exit(1);
   })
