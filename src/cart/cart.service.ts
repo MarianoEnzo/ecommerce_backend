@@ -41,55 +41,51 @@ export class CartService {
     };
   }
 
-  async addItem(cartId: string, dto: AddItemDto) {
-    const { productVariantId, quantity } = dto;
+ async addItem(cartId: string, dto: AddItemDto) {
+  const { productVariantId, quantity } = dto;
 
-    const variant = await this.prisma.productVariant.findUnique({
-      where: { id: productVariantId },
-      include: { product: true },
+  const variant = await this.prisma.productVariant.findUnique({
+    where: { id: productVariantId },
+    include: { product: true },
+  });
+
+  if (!variant || !variant.product.isActive) {
+    throw new NotFoundException('Product not available');
+  }
+
+  const existingItem = await this.prisma.cartItem.findUnique({
+    where: {
+      cartId_productVariantId: { cartId, productVariantId },
+    },
+  });
+
+  const currentQty = existingItem?.quantity ?? 0;
+  const newQty = currentQty + quantity;
+
+  if (newQty > variant.stock) {
+    throw new BadRequestException(
+      `Insufficient stock. Available: ${variant.stock - currentQty}`,
+    );
+  }
+
+  if (existingItem) {
+    await this.prisma.cartItem.update({
+      where: { id: existingItem.id },
+      data: { quantity: newQty },
     });
-
-    if (!variant || !variant.product.isActive) {
-      throw new NotFoundException('Product not available');
-    }
-
-    const existingItem = await this.prisma.cartItem.findUnique({
-      where: {
-        cartId_productVariantId: { cartId, productVariantId },
-      },
-    });
-
-    const currentQty = existingItem?.quantity ?? 0;
-    const newQty = currentQty + quantity;
-
-    if (newQty > variant.stock) {
-      throw new BadRequestException(
-        `Insufficient stock. Available: ${variant.stock - currentQty}`,
-      );
-    }
-
-    if (existingItem) {
-      return this.prisma.cartItem.update({
-        where: { id: existingItem.id },
-        data: { quantity: newQty },
-        include: {
-          productVariant: { include: { product: true, color: true } },
-        },
-      });
-    }
-
-    return this.prisma.cartItem.create({
+  } else {
+    await this.prisma.cartItem.create({
       data: {
         cartId,
         productVariantId,
         quantity,
         unitPrice: variant.product.price,
       },
-      include: {
-        productVariant: { include: { product: true, color: true } },
-      },
     });
   }
+
+  return this.getCart(cartId);
+}
 
   async updateItem(cartId: string, itemId: number, dto: UpdateItemDto) {
     const { quantity } = dto;

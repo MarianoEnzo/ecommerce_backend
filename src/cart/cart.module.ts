@@ -11,6 +11,6 @@ import { CartController } from './cart.controller';
 })
 export class CartModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CartMiddleware).forRoutes('cart', 'checkout');
+    consumer.apply(CartMiddleware).forRoutes('cart', 'checkout','orders');
   }
 }
